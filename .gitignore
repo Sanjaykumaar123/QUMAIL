@@ -1,0 +1,27 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.db
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Environment
+.env
+
+# Persistence
+keys_persistence.json
+keys_db.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/

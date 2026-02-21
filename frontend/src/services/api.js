@@ -1,0 +1,56 @@
+import axios from 'axios';
+
+const API_URL = 'http://127.0.0.1:8000';
+
+const api = axios.create({
+    baseURL: API_URL,
+});
+
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('qumail_token');
+    const agent = localStorage.getItem('qumail_agent');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (agent) {
+        config.headers['X-Agent-Email'] = agent;
+    }
+    return config;
+});
+
+export const login = async (credentials) => {
+    const response = await api.post('/login', credentials);
+    return response.data;
+};
+
+export const registerUser = async (credentials) => {
+    const response = await api.post('/register', credentials);
+    return response.data;
+};
+
+export const googleLogin = async (credentials) => {
+    const response = await api.post('/google-login', credentials);
+    return response.data;
+};
+
+export const fetchAIRecommendation = async (body, recipient) => {
+    const response = await api.post('/ai/recommend', { body, recipient });
+    return response.data;
+};
+
+export const sendEncryptedEmail = async (payload) => {
+    const response = await api.post('/email/send', payload);
+    return response.data;
+};
+
+export const getInbox = async () => {
+    const response = await api.get('/email/inbox');
+    return response.data;
+};
+
+export const getDashboardStats = async () => {
+    const response = await api.get('/security/dashboard');
+    return response.data;
+};
+
+export default api;
