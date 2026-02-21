@@ -253,11 +253,21 @@ def get_dashboard(db: Session = Depends(get_db)):
     else:
         risk_meter = 12
 
+    total_emails = db.query(models.Email).count()
+    active_risks = db.query(models.Email).filter(models.Email.threat_score > 50).count()
+
     return {
         "remaining_keys": remaining_keys,
         "risk_meter": risk_meter,
+        "secured_comms": total_emails,
+        "active_risks": active_risks,
         "recent_logs": [
-            {"id": log.id, "event": log.event_type, "time": log.timestamp}
+            {
+                "id": log.id, 
+                "event": log.event_type, 
+                "description": log.description,
+                "time": log.timestamp.strftime("%H:%M:%S")
+            }
             for log in db.query(models.SecurityLog).order_by(models.SecurityLog.id.desc()).limit(5).all()
         ]
     }
