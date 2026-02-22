@@ -58,20 +58,22 @@ def send_otp(req: OTPRequest):
     print(f"📩 [API] Received OTP request for: {req.email}")
     if not req.email:
         raise HTTPException(status_code=400, detail="Invalid email")
+    
     otp = str(random.randint(100000, 999999))
     otp_store[req.email] = otp
     
-    # Send email async
     RELAY_EMAIL = "sanjaykumaar772@gmail.com"
     RELAY_PASSWORD = "kczf fdxc wlwl vaxv"
     
-    print(f"🧵 [API] Spawning background thread for email delivery to {req.email}")
-    threading.Thread(
-        target=send_otp_email,
-        args=(RELAY_EMAIL, RELAY_PASSWORD, req.email, otp)
-    ).start()
+    print(f"📧 [API] Attempting SYNC email delivery to {req.email}...")
+    success = send_otp_email(RELAY_EMAIL, RELAY_PASSWORD, req.email, otp)
     
-    return {"status": "success", "message": "OTP sent successfully"}
+    if success:
+        print(f"✅ [API] OTP process completed for {req.email}")
+        return {"status": "success", "message": "OTP sent successfully"}
+    else:
+        print(f"❌ [API] OTP delivery failed for {req.email}")
+        raise HTTPException(status_code=500, detail="Failed to send Verification Code. Check server logs.")
 
 class VerifyOTPRequest(BaseModel):
     email: str
