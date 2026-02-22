@@ -44,7 +44,8 @@ def send_email(sender, password, receiver, body, security_level, key_id, nonce=N
 
     try:
         print(f"📧 [SMTP] Attempting to send secure email to {receiver} via {sender}...")
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.starttls()
             server.login(sender, password)
             server.send_message(msg)
             print(f"✅ [SMTP] Secure email sent successfully to {receiver}")
@@ -64,7 +65,8 @@ def send_otp_email(sender, password, receiver, otp):
 
     try:
         print(f"🔐 [OTP] Attempting to send verification code to {receiver}...")
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=15) as server:
+            server.starttls()
             server.login(sender, password)
             server.send_message(msg)
             print(f"✅ [OTP] Verification code delivered to {receiver}")
