@@ -237,17 +237,24 @@ def send_email(
     RELAY_EMAIL = "sanjaykumaar772@gmail.com" 
     RELAY_PASSWORD = "kczf fdxc wlwl vaxv" 
 
-    print(f"📧 [SMTP] Initiating real-world delivery to {req.recipient}...")
-    send_real_smtp(
-        RELAY_EMAIL, 
-        RELAY_PASSWORD, 
-        req.recipient, 
-        enc_b64, 
-        req.security_level, 
-        key_id, 
-        nonce_b64, 
-        f"QuMail: {req.subject} (from {sender_email})"
-    )
+    def background_dispatch():
+        print(f"📧 [SMTP] Background thread initiating delivery to {req.recipient}...")
+        success = send_real_smtp(
+            RELAY_EMAIL, 
+            RELAY_PASSWORD, 
+            req.recipient, 
+            enc_b64, 
+            req.security_level, 
+            key_id, 
+            nonce_b64, 
+            f"QuMail: {req.subject} (from {sender_email})"
+        )
+        if success:
+            print(f"✅ [SMTP] Background delivery successful for {req.recipient}")
+        else:
+            print(f"❌ [SMTP] Background delivery failed for {req.recipient}")
+
+    threading.Thread(target=background_dispatch).start()
     
     return {"status": "success", "message": "Email sent securely."}
 
