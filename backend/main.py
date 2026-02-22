@@ -17,8 +17,11 @@ from mail_client.imap_client import fetch_inbox as fetch_real_imap
 import random
 import threading
 
-# Create tables
-models.Base.metadata.create_all(bind=engine)
+# Create tables safely so a DB connection error doesn't crash Serverless Boot
+try:
+    models.Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Warning: Could not create tables. DB Connection issue: {e}")
 
 app = FastAPI(title="QuMail API", description="Quantum Secure Email Client")
 

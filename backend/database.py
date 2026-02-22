@@ -3,10 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Fetch database URL from environment variable, fallback to local SQLite.
+# Fetch database URL from environment variable, fallback to /tmp/qumail.db for serverless environments.
 SQLALCHEMY_DATABASE_URL = os.environ.get(
     "DATABASE_URL", 
-    "sqlite:///./qumail.db" # Default fallback for local dev if no URI provided
+    "sqlite:////tmp/qumail.db" # Must use /tmp on Vercel as everything else is read-only
 ).replace("postgres://", "postgresql://") # SQLAlchemy needs 'postgresql://' not 'postgres://'
 
 # SQLite needs "check_same_thread": False, but Postgres doesn't.
