@@ -49,6 +49,7 @@ class OTPRequest(BaseModel):
 
 @app.post("/send-otp")
 def send_otp(req: OTPRequest):
+    print(f"📩 [API] Received OTP request for: {req.email}")
     if not req.email:
         raise HTTPException(status_code=400, detail="Invalid email")
     otp = str(random.randint(100000, 999999))
@@ -58,6 +59,7 @@ def send_otp(req: OTPRequest):
     RELAY_EMAIL = "sanjaykumaar772@gmail.com"
     RELAY_PASSWORD = "kczf fdxc wlwl vaxv"
     
+    print(f"🧵 [API] Spawning background thread for email delivery to {req.email}")
     threading.Thread(
         target=send_otp_email,
         args=(RELAY_EMAIL, RELAY_PASSWORD, req.email, otp)

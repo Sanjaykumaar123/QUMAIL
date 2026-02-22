@@ -43,28 +43,32 @@ def send_email(sender, password, receiver, body, security_level, key_id, nonce=N
     msg.attach(MIMEText(formatted_body, 'plain'))
 
     try:
+        print(f"📧 [SMTP] Attempting to send secure email to {receiver} via {sender}...")
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(sender, password)
             server.send_message(msg)
+            print(f"✅ [SMTP] Secure email sent successfully to {receiver}")
             return True
     except Exception as e:
-        print(f"Failed to send actual email: {e}")
+        print(f"❌ [SMTP] CRITICAL FAILURE sending email to {receiver}: {e}")
         return False
 
 def send_otp_email(sender, password, receiver, otp):
     msg = MIMEMultipart()
     msg['Subject'] = "QuMail Verification Code"
-    msg['From'] = sender
+    msg['From'] = f"QuMail Security <{sender}>"
     msg['To'] = receiver
 
-    body = f"Your QuMail Verification Code is {otp}.\nPlease enter this securely to proceed."
+    body = f"Your QuMail Verification Code is: {otp}\n\nThis code expires in 10 minutes.\nIf you did not request this, please ignore this email."
     msg.attach(MIMEText(body, 'plain'))
 
     try:
+        print(f"🔐 [OTP] Attempting to send verification code to {receiver}...")
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(sender, password)
             server.send_message(msg)
+            print(f"✅ [OTP] Verification code delivered to {receiver}")
             return True
     except Exception as e:
-        print(f"Failed to send OTP: {e}")
+        print(f"❌ [OTP] CRITICAL FAILURE sending code to {receiver}: {e}")
         return False
