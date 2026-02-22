@@ -120,109 +120,21 @@ const Login = ({ onLogin }) => {
                     )}
                 </AnimatePresence>
 
-                <div className="flex flex-col items-center space-y-4 mb-6">
-                    <div className="w-full flex justify-center">
+                <div className="flex flex-col items-center space-y-6 mb-2">
+                    <p className="text-gray-400 text-[10px] uppercase font-mono tracking-widest text-center mb-2">
+                        Authorized Personnel Only
+                    </p>
+                    <div className="w-full flex justify-center scale-110">
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
                             onError={() => setError("Google login failed")}
                             theme="filled_black"
-                            width="100%"
+                            width="280px"
                             shape="pill"
                             text="continue_with"
                         />
                     </div>
                 </div>
-
-                <div className="w-full flex items-center space-x-4 mb-6">
-                    <div className="h-[1px] bg-white/10 flex-1"></div>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-widest font-mono">OR</span>
-                    <div className="h-[1px] bg-white/10 flex-1"></div>
-                </div>
-
-                {step === 1 ? (
-                    <form onSubmit={handleSendOtp} className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-mono text-neonCyan tracking-widest uppercase">Email Address</label>
-                            <div className="relative group">
-                                <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-500 group-focus-within:text-neonCyan transition" />
-                                <input
-                                    type="email"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg py-3 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-neonCyan focus:shadow-[0_0_10px_rgba(6,182,212,0.5)] transition-all"
-                                    placeholder="yourname@domain.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="w-full bg-electricPurple hover:bg-purple-600 border border-electricPurple text-white font-bold py-3 px-4 rounded-lg shadow-[0_0_20px_rgba(124,58,237,0.6)] transition-all flex items-center justify-center space-x-2 disabled:opacity-70 mt-4 overflow-hidden relative group"
-                            disabled={loading}
-                        >
-                            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-500 ease-out" />
-                            {loading ? (
-                                <motion.div
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                                />
-                            ) : (
-                                <>
-                                    <Mail className="w-5 h-5" />
-                                    <span className="tracking-widest uppercase font-mono relative z-10">
-                                        Send Verification Code
-                                    </span>
-                                </>
-                            )}
-                        </button>
-                    </form>
-                ) : (
-                    <form onSubmit={handleVerifyOtp} className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-mono text-neonCyan tracking-widest uppercase">Enter OTP</label>
-                            <div className="relative group">
-                                <Key className="absolute left-3 top-3 w-5 h-5 text-gray-500 group-focus-within:text-electricPurple transition" />
-                                <input
-                                    type="text"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg py-3 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-electricPurple focus:shadow-[0_0_10px_rgba(124,58,237,0.5)] transition-all text-center tracking-[0.5em] font-bold"
-                                    placeholder="••••••"
-                                    maxLength="6"
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                    required
-                                    autoFocus
-                                />
-                            </div>
-                            <p className="text-xs text-center text-gray-500 mt-2 font-mono">
-                                Sent to {email}. <button type="button" onClick={() => { setStep(1); setSuccessMsg(''); setError(''); setOtp(''); }} className="text-neonCyan hover:underline">Change</button>
-                            </p>
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="w-full bg-neonCyan hover:bg-cyan-500 border border-neonCyan text-black font-bold py-3 px-4 rounded-lg shadow-[0_0_20px_rgba(6,182,212,0.6)] transition-all flex items-center justify-center space-x-2 disabled:opacity-70 mt-4 overflow-hidden relative group"
-                            disabled={loading || otp.length < 5}
-                        >
-                            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-500 ease-out" />
-                            {loading ? (
-                                <motion.div
-                                    animate={{ rotate: 360 }}
-                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                    className="w-5 h-5 border-2 border-black border-t-transparent rounded-full"
-                                />
-                            ) : (
-                                <>
-                                    <Fingerprint className="w-5 h-5" />
-                                    <span className="tracking-widest uppercase font-mono relative z-10">
-                                        Verify & Login
-                                    </span>
-                                </>
-                            )}
-                        </button>
-                    </form>
-                )}
 
                 <div className="mt-8 pt-4 border-t border-white/10 text-center text-xs text-gray-500 font-mono flex items-center justify-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-neonCyan animate-pulse shadow-[0_0_8px_#06b6d4]"></div>
