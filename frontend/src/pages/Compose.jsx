@@ -16,17 +16,20 @@ const Compose = () => {
     const [analyzing, setAnalyzing] = useState(false);
     const [suggestion, setSuggestion] = useState(null);
     const [sending, setSending] = useState(false);
+    const [error, setError] = useState('');
     const [sent, setSent] = useState(false);
     const [sendStep, setSendStep] = useState(0);
 
     const analyzeContent = async () => {
         if (!body) return;
         setAnalyzing(true);
+        setError('');
         try {
             const result = await fetchAIRecommendation(body, recipient);
             setSuggestion(result.recommended_level);
         } catch (e) {
             console.error("Analysis failed", e);
+            setError("AI Analysis unavailable. Proceed with caution.");
         }
         setAnalyzing(false);
     };
@@ -34,6 +37,7 @@ const Compose = () => {
     const handleSend = async () => {
         setSending(true);
         setSendStep(1); // Compose -> Encryption Engine
+        setError('');
 
         try {
             await new Promise(resolve => setTimeout(resolve, 800));
@@ -42,26 +46,32 @@ const Compose = () => {
             await new Promise(resolve => setTimeout(resolve, 800));
             setSendStep(3); // KM Fetch -> API / SMTP Dispatch
 
-            await sendEncryptedEmail({
+            const response = await sendEncryptedEmail({
                 recipient,
                 subject,
                 body,
                 security_level: level
             });
 
-            setSendStep(4); // Dispatched
-            setSent(true);
-            setTimeout(() => {
-                setSent(false);
-                setSending(false);
-                setSendStep(0);
-                setRecipient('');
-                setSubject('');
-                setBody('');
-                setSuggestion(null);
-            }, 3000);
+            if (response.status === 'success') {
+                setSendStep(4); // Dispatched
+                setSent(true);
+                setTimeout(() => {
+                    setSent(false);
+                    setSending(false);
+                    setSendStep(0);
+                    setRecipient('');
+                    setSubject('');
+                    setBody('');
+                    setSuggestion(null);
+                    window.location.href = '/sent'; // Hard navigate to refresh state
+                }, 2000);
+            } else {
+                throw new Error(response.message || "Dispatch failed");
+            }
         } catch (e) {
             console.error("Failed to send", e);
+            setError(e.response?.data?.detail || e.message || "Critical failure during dispatch.");
             setSending(false);
             setSendStep(0);
         }
@@ -147,6 +157,17 @@ const Compose = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 flex items-center space-x-3 text-sm text-red-400 font-mono shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+                        >
+                            <AlertTriangle className="w-5 h-5 shrink-0" />
+                            <span>{error}</span>
+                        </motion.div>
+                    )}
 
                     <div className="pt-4 border-t border-white/10">
                         <label className="text-xs font-mono text-gray-400 tracking-widest uppercase mb-4 block">Select Encryption Protocol</label>

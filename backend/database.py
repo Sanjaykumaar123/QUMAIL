@@ -12,8 +12,8 @@ raw_url = raw_url.strip().strip('"').strip("'")
 
 # 2. Decision Logic for SQLALCHEMY_DATABASE_URL
 if not raw_url or "://" not in raw_url or "your_neon_db_url_here" in raw_url:
-    print("🚀 [STATUS] No valid DATABASE_URL found. Using failsafe SQLite.")
-    SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/qumail.db"
+    print("🚀 [STATUS] No valid DATABASE_URL found. Using local project SQLite.")
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./qumail.db"
 else:
     # SQLAlchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
     SQLALCHEMY_DATABASE_URL = re.sub(r'^postgres://', 'postgresql://', raw_url)
@@ -43,8 +43,8 @@ try:
 
 except Exception as e:
     print(f"❌ [ERROR] Could not initialize external DB: {e}")
-    print("🚀 [STATUS] Falling back to emergency SQLite /tmp/qumail.db")
-    SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/qumail.db"
+    print("🚀 [STATUS] Falling back to emergency SQLite ./qumail.db")
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./qumail.db"
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL, 
         connect_args={"check_same_thread": False}
