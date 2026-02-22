@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Activity, ShieldAlert, Cpu } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
+import { getDashboardStats } from '../services/api';
 
-const data = [
+const defaultData = [
     { subject: 'MITM Resistance', A: 120, fullMark: 150 },
     { subject: 'HNDL Score', A: 98, fullMark: 150 },
     { subject: 'QKD Entropy', A: 140, fullMark: 150 },
@@ -12,6 +14,29 @@ const data = [
 ];
 
 const ThreatPanel = () => {
+    const [logs, setLogs] = useState([]);
+    const [riskMeter, setRiskMeter] = useState(0);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getDashboardStats();
+                setLogs(data.recent_logs || []);
+                setRiskMeter(data.risk_meter || 0);
+            } catch (err) {
+                console.error("Failed to fetch threat data", err);
+            }
+        };
+        fetchData();
+        const interval = setInterval(fetchData, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const dynamicData = defaultData.map(d => ({
+        ...d,
+        A: d.A - (riskMeter > 50 ? 20 : 0) // Slightly alter chart based on risk meter
+    }));
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between mb-8">
@@ -32,10 +57,10 @@ const ThreatPanel = () => {
                     <div className="absolute inset-0 bg-red-500/5 blur-3xl rounded-full" />
                     <h3 className="font-mono text-gray-300 mb-4 tracking-widest uppercase self-start w-full border-b border-white/10 pb-4 flex items-center">
                         <Activity className="w-4 h-4 mr-2 text-neonCyan" />
-                        Vulnerability Multi-vector
+                        Vulnerability Multi-vector (Risk: {riskMeter}%)
                     </h3>
                     <ResponsiveContainer width="100%" height="100%">
-                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={dynamicData}>
                             <PolarGrid stroke="#ef444430" />
                             <PolarAngleAxis dataKey="subject" tick={{ fill: '#6b7280', fontSize: 10, fontFamily: 'monospace' }} />
                             <PolarRadiusAxis angle={30} domain={[0, 150]} className="hidden" />
@@ -54,31 +79,28 @@ const ThreatPanel = () => {
                     </h3>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-2">
-                        {[1, 2, 3].map(i => (
+                        {logs.length > 0 ? logs.map((log, index) => (
                             <motion.div
                                 initial={{ opacity: 0, x: 20 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.2 }}
-                                key={i}
-                                className="p-4 rounded-lg bg-black/40 border border-white/5 relative overflow-hidden group hover:border-neonCyan transition-all"
+                                transition={{ delay: index * 0.1 }}
+                                key={log.id}
+                                className="p-4 rounded-lg bg-black/40 border border-white/5 relative overflow-hidden group hover:border-electricPurple transition-all"
                             >
-                                <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-neonCyan/20 to-transparent blur-xl rounded-full -translate-y-1/2 translate-x-1/2" />
+                                <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-electricPurple/20 to-transparent blur-xl rounded-full -translate-y-1/2 translate-x-1/2" />
                                 <h4 className="font-bold text-white text-sm font-mono mb-2 tracking-wide flex justify-between">
-                                    {i === 1 ? 'Harvest-Now Risk Detected' : i === 2 ? 'Node Epsilon Latency Spike' : 'Protocol Baseline Nominal'}
-                                    <span className="text-xs text-gray-500">T-{i * 14}s</span>
+                                    {log.event.replace(/_/g, ' ')}
+                                    <span className="text-[10px] text-gray-500 bg-gray-900 px-2 py-0.5 rounded">{log.time}</span>
                                 </h4>
                                 <p className="text-xs text-gray-400 font-mono leading-relaxed">
-                                    {i === 1 ? 'Adversarial quantum compute node detected sniffing traffic on routing hop L7.' :
-                                        i === 2 ? 'Slight delay during key exchange simulation. Fallback to secondary QKD path engaged automatically.' :
-                                            'Overall encryption strength holding steady at 99.8% multi-vector threshold.'}
+                                    {log.description}
                                 </p>
-                                {i === 1 && (
-                                    <button className="mt-3 text-[10px] uppercase font-bold tracking-widest border border-neonCyan text-neonCyan px-3 py-1 rounded bg-neonCyan/10 hover:bg-neonCyan hover:text-black transition-all shadow-[0_0_5px_rgba(6,182,212,0.4)]">
-                                        Enforce Level 3
-                                    </button>
-                                )}
                             </motion.div>
-                        ))}
+                        )) : (
+                            <div className="p-4 text-center text-gray-500 font-mono text-sm border border-dashed border-white/10 rounded-lg">
+                                Intercepting Logs... No recent threats detected.
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
