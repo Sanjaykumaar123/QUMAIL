@@ -280,8 +280,10 @@ def get_inbox(
                 ciphertext = base64.b64decode(enc_b64)
                 decrypted_body = decrypt_pqc(ciphertext).decode("utf-8", errors="replace")
         except Exception as ex:
-            print(f"Decryption error for msg {e.id}: {ex}")
-            decrypted_body = f"<Decryption Error: Key Fetch Failed or Parse Error>"
+            import traceback
+            print(f"❌ [DECRYPT] Failure on msg {e.id} (Level {e.security_level}): {ex}")
+            print(traceback.format_exc())
+            decrypted_body = f"<Decryption Error: Key Mismatch or Integrity Failure>"
             
         result.append({
             "id": e.id,

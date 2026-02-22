@@ -21,7 +21,7 @@ def retrieve_qkd_key(key_id):
             return base64.b64decode(data["key"])
     except Exception:
         pass
-    return b"\x00" * 1024 # Fallback
+    return b"0" * 1024 # Fallback to match encryption phase
 
 def fetch_key_stats():
     try:
