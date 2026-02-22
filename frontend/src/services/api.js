@@ -54,4 +54,9 @@ export const getDashboardStats = async () => {
     return response.data;
 };
 
+export const getSentItems = async () => {
+    const response = await api.get('/email/sent');
+    return response.data;
+};
+
 export default api;

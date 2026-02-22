@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Inbox, PenTool, ShieldAlert, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, Inbox, Send, PenTool, ShieldAlert, LogOut, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Sidebar = () => {
@@ -8,6 +8,7 @@ const Sidebar = () => {
     const links = [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         { name: 'Inbox', path: '/inbox', icon: Inbox },
+        { name: 'Sent Items', path: '/sent', icon: Send },
         { name: 'Compose', path: '/compose', icon: PenTool },
         { name: 'Threat Radar', path: '/threats', icon: ShieldAlert },
     ];

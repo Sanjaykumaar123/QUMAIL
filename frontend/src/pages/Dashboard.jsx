@@ -3,16 +3,6 @@ import { Activity, Key, Shield, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getDashboardStats } from '../services/api';
-const data = [
-    { name: '00:00', keys: 400, risk: 24 },
-    { name: '04:00', keys: 300, risk: 13 },
-    { name: '08:00', keys: 550, risk: 45 },
-    { name: '12:00', keys: 278, risk: 39 },
-    { name: '16:00', keys: 189, risk: 48 },
-    { name: '20:00', keys: 239, risk: 38 },
-    { name: '24:00', keys: 349, risk: 43 },
-];
-
 const StatCard = ({ title, value, icon: Icon, color, glow }) => (
     <motion.div
         whileHover={{ y: -5, boxShadow: `0 10px 30px -10px ${glow}` }}
@@ -34,10 +24,11 @@ const StatCard = ({ title, value, icon: Icon, color, glow }) => (
 const Dashboard = () => {
     const [stats, setStats] = useState({
         remaining_keys: 4289,
-        risk_meter: 12,
+        threat_score: 12,
         secured_comms: 0,
         active_risks: 0,
-        recent_logs: []
+        network_usage: [],
+        audit_logs: []
     });
 
     useEffect(() => {
@@ -71,7 +62,7 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard title="Remaining Keys" value={stats.remaining_keys.toLocaleString()} icon={Key} color="neonCyan" glow="rgba(6,182,212,0.4)" />
-                <StatCard title="Threat Score" value={`${stats.risk_meter}%`} icon={Activity} color="green-400" glow="rgba(74,222,128,0.4)" />
+                <StatCard title="Threat Score" value={`${stats.threat_score}%`} icon={Activity} color="green-400" glow="rgba(74,222,128,0.4)" />
                 <StatCard title="Secured Comms" value={stats.secured_comms.toLocaleString()} icon={Shield} color="electricPurple" glow="rgba(124,58,237,0.4)" />
                 <StatCard title="Active Risks" value={stats.active_risks.toString()} icon={AlertTriangle} color="red-500" glow="rgba(239,68,68,0.4)" />
             </div>
@@ -84,7 +75,7 @@ const Dashboard = () => {
                     </h3>
                     <div className="h-80 w-full font-mono">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={data}>
+                            <LineChart data={stats.network_usage}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                                 <XAxis dataKey="name" stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} />
                                 <YAxis stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -92,8 +83,26 @@ const Dashboard = () => {
                                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#06b6d4', borderRadius: '8px', boxShadow: '0 0 15px rgba(6,182,212,0.2)' }}
                                     itemStyle={{ color: '#fff' }}
                                 />
-                                <Line type="stepAfter" dataKey="keys" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4, fill: '#06b6d4', strokeWidth: 2, stroke: '#020617' }} activeDot={{ r: 6, shadow: '0 0 10px #06b6d4' }} />
-                                <Line type="monotone" dataKey="risk" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                                <Line
+                                    type="stepAfter"
+                                    dataKey="keys"
+                                    stroke="#06b6d4"
+                                    strokeWidth={3}
+                                    dot={{ r: 4, fill: '#06b6d4', strokeWidth: 2, stroke: '#020617' }}
+                                    activeDot={{ r: 6, shadow: '0 0 10px #06b6d4' }}
+                                    animationDuration={1000}
+                                    isAnimationActive={true}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="risk"
+                                    stroke="#ef4444"
+                                    strokeWidth={2}
+                                    strokeDasharray="5 5"
+                                    dot={false}
+                                    animationDuration={1500}
+                                    isAnimationActive={true}
+                                />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -105,11 +114,13 @@ const Dashboard = () => {
                         Audit Log
                     </h3>
                     <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-                        {stats.recent_logs.length > 0 ? (
-                            stats.recent_logs.map((log) => (
+                        {stats.audit_logs && stats.audit_logs.length > 0 ? (
+                            stats.audit_logs.map((log) => (
                                 <div key={log.id} className="flex flex-col border-l-2 border-white/10 pl-4 py-1 relative group hover:border-neonCyan transition-colors">
                                     <div className="absolute w-2 h-2 rounded-full bg-white/20 -left-[5px] top-2 group-hover:bg-neonCyan group-hover:shadow-[0_0_8px_#06b6d4] transition-all" />
-                                    <span className="text-[10px] text-gray-500 font-mono mb-1">{log.time}</span>
+                                    <span className="text-[10px] text-gray-500 font-mono mb-1">
+                                        {new Date(log.time).toLocaleTimeString()}
+                                    </span>
                                     <span className="text-xs font-mono font-bold text-neonCyan uppercase tracking-widest">{log.event}</span>
                                     <span className="text-[11px] text-gray-400 mt-1 italic">
                                         {log.description}

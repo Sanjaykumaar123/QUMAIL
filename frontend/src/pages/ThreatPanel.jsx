@@ -15,26 +15,26 @@ const defaultData = [
 
 const ThreatPanel = () => {
     const [logs, setLogs] = useState([]);
-    const [riskMeter, setRiskMeter] = useState(0);
+    const [threatScore, setThreatScore] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const data = await getDashboardStats();
-                setLogs(data.recent_logs || []);
-                setRiskMeter(data.risk_meter || 0);
+                setLogs(data.audit_logs || []);
+                setThreatScore(data.threat_score || 0);
             } catch (err) {
                 console.error("Failed to fetch threat data", err);
             }
         };
         fetchData();
-        const interval = setInterval(fetchData, 5000);
+        const interval = setInterval(fetchData, 4000);
         return () => clearInterval(interval);
     }, []);
 
     const dynamicData = defaultData.map(d => ({
         ...d,
-        A: d.A - (riskMeter > 50 ? 20 : 0) // Slightly alter chart based on risk meter
+        A: Math.min(150, Math.max(50, d.A - (threatScore > 50 ? (threatScore - 50) : 0) + (Math.random() * 10 - 5)))
     }));
 
     return (
@@ -57,7 +57,7 @@ const ThreatPanel = () => {
                     <div className="absolute inset-0 bg-red-500/5 blur-3xl rounded-full" />
                     <h3 className="font-mono text-gray-300 mb-4 tracking-widest uppercase self-start w-full border-b border-white/10 pb-4 flex items-center">
                         <Activity className="w-4 h-4 mr-2 text-neonCyan" />
-                        Vulnerability Multi-vector (Risk: {riskMeter}%)
+                        Vulnerability Multi-vector (Risk: {threatScore}%)
                     </h3>
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={dynamicData}>
@@ -90,7 +90,9 @@ const ThreatPanel = () => {
                                 <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-electricPurple/20 to-transparent blur-xl rounded-full -translate-y-1/2 translate-x-1/2" />
                                 <h4 className="font-bold text-white text-sm font-mono mb-2 tracking-wide flex justify-between">
                                     {log.event.replace(/_/g, ' ')}
-                                    <span className="text-[10px] text-gray-500 bg-gray-900 px-2 py-0.5 rounded">{log.time}</span>
+                                    <span className="text-[10px] text-gray-500 bg-gray-900 px-2 py-0.5 rounded">
+                                        {new Date(log.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                 </h4>
                                 <p className="text-xs text-gray-400 font-mono leading-relaxed">
                                     {log.description}
