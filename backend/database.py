@@ -1,37 +1,54 @@
 import os
+import re
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+# 1. Capture and sanitize the URL string
 raw_url = os.environ.get("DATABASE_URL", "").strip().strip('"').strip("'")
-print(f"🚀 [INIT] Database phase 1: URL processing...")
 
-if not raw_url or raw_url == "your_neon_db_url_here":
-    print("🚀 [INIT] No DATABASE_URL provided. Fallback to /tmp/qumail.db")
+# 2. Decision Logic for SQLALCHEMY_DATABASE_URL
+if not raw_url or "://" not in raw_url or "your_neon_db_url_here" in raw_url:
+    print("🚀 [STATUS] No valid DATABASE_URL found. Using failsafe SQLite.")
     SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/qumail.db"
 else:
-    print(f"🚀 [INIT] Found DATABASE_URL starting with: {raw_url[:15]}")
-    if raw_url.startswith("postgres://"):
-        SQLALCHEMY_DATABASE_URL = raw_url.replace("postgres://", "postgresql://", 1)
+    # SQLAlchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
+    # We use a regex to replace exactly the scheme part without touching the rest
+    SQLALCHEMY_DATABASE_URL = re.sub(r'^postgres://', 'postgresql://', raw_url)
+    print(f"🚀 [STATUS] Attempting to connect to external DB (scheme: {SQLALCHEMY_DATABASE_URL.split('://')[0]})")
+
+# 3. Create Engine with Failsafe Fallback
+try:
+    # SQLite needs "check_same_thread": False
+    if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+        engine = create_engine(
+            SQLALCHEMY_DATABASE_URL, 
+            connect_args={"check_same_thread": False}
+        )
     else:
-        SQLALCHEMY_DATABASE_URL = raw_url
+        # Use Standard Postgres settings
+        engine = create_engine(
+            SQLALCHEMY_DATABASE_URL,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+            pool_recycle=300
+        )
+    
+    # Test connection immediately
+    with engine.connect() as conn:
+        print("🚀 [STATUS] Database Engine created and connection verified.")
 
-# SQLite needs "check_same_thread": False, but Postgres doesn't.
-print(f"🚀 [INIT] Database phase 2: Creating engine for {SQLALCHEMY_DATABASE_URL[:10]}...")
-if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+except Exception as e:
+    print(f"❌ [ERROR] Could not initialize external DB: {e}")
+    print("🚀 [STATUS] Falling back to emergency SQLite /tmp/qumail.db")
+    SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/qumail.db"
     engine = create_engine(
-        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+        SQLALCHEMY_DATABASE_URL, 
+        connect_args={"check_same_thread": False}
     )
-else:
-    engine = create_engine(
-        SQLALCHEMY_DATABASE_URL,
-        pool_size=5,
-        max_overflow=10,
-        pool_pre_ping=True
-    )
-print(f"🚀 [INIT] Database phase 3: Engine ready.")
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()
 
 def get_db():
