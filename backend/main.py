@@ -16,14 +16,18 @@ from mail_client.smtp_client import send_email as send_real_smtp, send_otp_email
 from mail_client.imap_client import fetch_inbox as fetch_real_imap
 import random
 import threading
-
-# Create tables safely so a DB connection error doesn't crash Serverless Boot
-try:
-    models.Base.metadata.create_all(bind=engine)
-except Exception as e:
-    print(f"Warning: Could not create tables. DB Connection issue: {e}")
+print(f"🚀 [STARTUP] QuMail Backend is booting...")
 
 app = FastAPI(title="QuMail API", description="Quantum Secure Email Client")
+
+@app.on_event("startup")
+def startup_db_client():
+    print(f"🚀 [STARTUP] Initializing database tables...")
+    try:
+        models.Base.metadata.create_all(bind=engine)
+        print(f"🚀 [STARTUP] Database tables initialized successfully.")
+    except Exception as e:
+        print(f"❌ [STARTUP] Critical Error during table creation: {e}")
 
 app.add_middleware(
     CORSMiddleware,
