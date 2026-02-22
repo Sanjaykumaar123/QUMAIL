@@ -215,7 +215,19 @@ const Compose = () => {
                         )}
                     </AnimatePresence>
 
-                    <div className="pt-6 flex justify-end">
+                    <div className="pt-6 flex flex-col items-end">
+                        <AnimatePresence>
+                            {sent && (
+                                <motion.div
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    className="mb-3 text-[10px] font-mono text-green-400 bg-green-500/10 px-3 py-1 rounded border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.1)]"
+                                >
+                                    QUANTUM TUNNEL ESTABLISHED: Ciphertext dispatched to Gmail.
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                         <button
                             onClick={handleSend}
                             disabled={!recipient || !body || sending || sent}
