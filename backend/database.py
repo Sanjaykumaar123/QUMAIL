@@ -9,9 +9,7 @@ if not raw_url or raw_url == "your_neon_db_url_here":
     SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/qumail.db"
 else:
     if raw_url.startswith("postgres://"):
-        SQLALCHEMY_DATABASE_URL = raw_url.replace("postgres://", "postgresql+pg8000://", 1)
-    elif raw_url.startswith("postgresql://"):
-        SQLALCHEMY_DATABASE_URL = raw_url.replace("postgresql://", "postgresql+pg8000://", 1)
+        SQLALCHEMY_DATABASE_URL = raw_url.replace("postgres://", "postgresql://", 1)
     else:
         SQLALCHEMY_DATABASE_URL = raw_url
 

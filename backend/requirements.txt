@@ -20,7 +20,7 @@ joblib==1.5.3
 MarkupSafe==3.0.3
 numpy==2.4.2
 passlib==1.7.4
-pg8000==1.31.2
+psycopg2-binary==2.9.11
 pyasn1==0.6.2
 pyasn1_modules==0.4.2
 pycparser==3.0
