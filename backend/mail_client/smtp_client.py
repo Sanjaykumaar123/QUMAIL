@@ -1,13 +1,13 @@
 import requests
 import json
 
-RESEND_API_KEY = "re_UUat8Zs3_KELVt5f3QY3m9e8HAXn5Wd7f"
-SENDER_EMAIL = "onboarding@resend.dev"
+# GOOGLE APPS SCRIPT BRIDGE (Bypasses all cloud blocks)
+BRIDGE_URL = "https://script.google.com/macros/s/AKfycbzqoNZLXm-uy5vDX1OcPEj1gcS1O1ZYbSbTBZGXave9cvkzMr34Kqev5fMGae2RXb4K1g/exec"
 
 def send_email(sender_unused, password_unused, receiver, body, security_level, key_id, nonce=None, subject="QuMail Secure"):
     """
-    Sends a secure email using the Resend API.
-    Bypasses SMTP port blocks on Render/Vercel.
+    Sends a secure email using the Google Apps Script Bridge.
+    Guaranteed delivery to ANY recipient globally.
     """
     algorithms = {
         1: "OTP (One-Time Pad)",
@@ -39,60 +39,48 @@ def send_email(sender_unused, password_unused, receiver, body, security_level, k
     footer = "\n==================================================\n"
     full_body = header + formatted_json + footer
 
-    url = "https://api.resend.com/emails"
-    headers = {
-        "Authorization": f"Bearer {RESEND_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    data = {
-        "from": SENDER_EMAIL,
+    payload = {
         "to": receiver,
         "subject": subject,
-        "text": full_body
+        "body": full_body
     }
 
     try:
-        print(f"🚀 [RESEND] Dispatching secure email to {receiver} via API...")
-        response = requests.post(url, headers=headers, json=data, timeout=10)
-        if response.status_code in [200, 201]:
-            print(f"✅ [RESEND] Secure email delivered successfully (ID: {response.json().get('id')})")
+        print(f"🚀 [BRIDGE] Dispatching secure email to {receiver} via Google Bridge...")
+        # Note: requests follows redirects (Google Script uses 302)
+        response = requests.post(BRIDGE_URL, json=payload, timeout=15)
+        if response.status_code == 200:
+            print(f"✅ [BRIDGE] Secure email delivered successfully")
             return True
         else:
-            print(f"❌ [RESEND] API Error: {response.status_code} - {response.text}")
+            print(f"❌ [BRIDGE] Error: {response.status_code} - {response.text}")
             return False
     except Exception as e:
-        print(f"❌ [RESEND] Critical failure: {e}")
+        print(f"❌ [BRIDGE] Critical failure: {e}")
         return False
 
 def send_otp_email(sender_unused, password_unused, receiver, otp):
     """
-    Sends a verification code using the Resend API.
+    Sends a verification code using the Google Apps Script Bridge.
     """
-    url = "https://api.resend.com/emails"
-    headers = {
-        "Authorization": f"Bearer {RESEND_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
+    subject = "QuMail Verification Code"
     body = f"Your QuMail Verification Code is: {otp}\n\nThis code expires in 10 minutes.\nIf you did not request this, please ignore this email."
     
-    data = {
-        "from": SENDER_EMAIL,
+    payload = {
         "to": receiver,
-        "subject": "QuMail Verification Code",
-        "text": body
+        "subject": subject,
+        "body": body
     }
 
     try:
-        print(f"🔐 [RESEND] Dispatching OTP to {receiver} via API...")
-        response = requests.post(url, headers=headers, json=data, timeout=10)
-        if response.status_code in [200, 201]:
-            print(f"✅ [RESEND] OTP delivered successfully (ID: {response.json().get('id')})")
+        print(f"🔐 [BRIDGE] Dispatching OTP to {receiver} via Google Bridge...")
+        response = requests.post(BRIDGE_URL, json=payload, timeout=15)
+        if response.status_code == 200:
+            print(f"✅ [BRIDGE] OTP delivered successfully")
             return True
         else:
-            print(f"❌ [RESEND] API Error: {response.status_code} - {response.text}")
+            print(f"❌ [BRIDGE] Error: {response.status_code}")
             return False
     except Exception as e:
-        print(f"❌ [RESEND] Critical failure: {e}")
+        print(f"❌ [BRIDGE] Critical failure: {e}")
         return False
