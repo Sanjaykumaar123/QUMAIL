@@ -27,12 +27,17 @@ def send_email(sender_unused, password_unused, receiver, body, security_level, k
 
     formatted_json = json.dumps(payload_data, indent=2)
     header = (
-        "🔐 QuMail Secure Message\n"
-        "This email is quantum-encrypted.\n"
-        "Open in QuMail to decrypt.\n\n"
-        "--- ENCRYPTED PAYLOAD ---\n"
+        "╔════════════════════════════════════════════════╗\n"
+        "  ☢️ QUMAIL QUANTUM SECURE DISPATCH ☢️\n"
+        "╚════════════════════════════════════════════════╝\n\n"
+        "CLASSIFICATION: POST-QUANTUM SECURE\n"
+        "STATUS: ENCRYPTED (ZERO-TRUST COMPLIANT)\n\n"
+        "This communication is secured using Post-Quantum Cryptography.\n"
+        "DECRYPT HERE: https://qumail-app.vercel.app/inbox\n\n"
+        "================[ SECURE PAYLOAD ]================\n"
     )
-    full_body = header + formatted_json
+    footer = "\n==================================================\n"
+    full_body = header + formatted_json + footer
 
     url = "https://api.resend.com/emails"
     headers = {
