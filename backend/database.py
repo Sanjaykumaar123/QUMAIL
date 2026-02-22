@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 SQLALCHEMY_DATABASE_URL = os.environ.get(
     "DATABASE_URL", 
     "sqlite:////tmp/qumail.db" # Must use /tmp on Vercel as everything else is read-only
-).replace("postgres://", "postgresql://") # SQLAlchemy needs 'postgresql://' not 'postgres://'
+).replace("postgres://", "postgresql+pg8000://").replace("postgresql://", "postgresql+pg8000://")
 
 # SQLite needs "check_same_thread": False, but Postgres doesn't.
 if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
