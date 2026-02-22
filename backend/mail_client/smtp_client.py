@@ -50,3 +50,21 @@ def send_email(sender, password, receiver, body, security_level, key_id, nonce=N
     except Exception as e:
         print(f"Failed to send actual email: {e}")
         return False
+
+def send_otp_email(sender, password, receiver, otp):
+    msg = MIMEMultipart()
+    msg['Subject'] = "QuMail Verification Code"
+    msg['From'] = sender
+    msg['To'] = receiver
+
+    body = f"Your QuMail Verification Code is {otp}.\nPlease enter this securely to proceed."
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(sender, password)
+            server.send_message(msg)
+            return True
+    except Exception as e:
+        print(f"Failed to send OTP: {e}")
+        return False

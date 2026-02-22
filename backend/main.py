@@ -12,8 +12,10 @@ from km_client.qkd_client import fetch_qkd_key, retrieve_qkd_key, fetch_key_stat
 from encryption.crypto_plugins.otp_engine import encrypt_otp, decrypt_otp
 from encryption.crypto_plugins.quantum_aes import encrypt_quantum_aes, decrypt_quantum_aes
 from encryption.crypto_plugins.pqc_module import encrypt_pqc, decrypt_pqc
-from mail_client.smtp_client import send_email as send_real_smtp
+from mail_client.smtp_client import send_email as send_real_smtp, send_otp_email
 from mail_client.imap_client import fetch_inbox as fetch_real_imap
+import random
+import threading
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -28,9 +30,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class LoginRequest(BaseModel):
+otp_store = {}
+
+class OTPRequest(BaseModel):
     email: str
-    password: str
+
+@app.post("/send-otp")
+def send_otp(req: OTPRequest):
+    if not req.email:
+        raise HTTPException(status_code=400, detail="Invalid email")
+    otp = str(random.randint(100000, 999999))
+    otp_store[req.email] = otp
+    
+    # Send email async
+    RELAY_EMAIL = "sanjaykumaar772@gmail.com"
+    RELAY_PASSWORD = "kczf fdxc wlwl vaxv"
+    
+    threading.Thread(
+        target=send_otp_email,
+        args=(RELAY_EMAIL, RELAY_PASSWORD, req.email, otp)
+    ).start()
+    
+    return {"status": "success", "message": "OTP sent successfully"}
+
+class VerifyOTPRequest(BaseModel):
+    email: str
+    otp: str
+
+@app.post("/verify-otp")
+def verify_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
+    if otp_store.get(req.email) != req.otp:
+        raise HTTPException(status_code=401, detail="Invalid or expired OTP")
+    
+    # OTP verified, remove from store
+    del otp_store[req.email]
+    
+    user = db.query(models.User).filter(models.User.email == req.email).first()
+    if not user:
+        user = models.User(email=req.email, hashed_password="OTP_AUTH_USER")
+        db.add(user)
+        db.commit()
+    
+    return {"access_token": "mock-jwt-token", "token_type": "bearer", "email": req.email}
+
 
 @app.get("/")
 def read_root():
@@ -40,23 +82,6 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
 GOOGLE_CLIENT_ID = "458142597311-edo75f4laiivejnqgom88vb0piv2btd7.apps.googleusercontent.com"
-
-@app.post("/register")
-def register(req: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == req.email).first()
-    if user:
-        raise HTTPException(status_code=400, detail="User already exists")
-    new_user = models.User(email=req.email, hashed_password=req.password)
-    db.add(new_user)
-    db.commit()
-    return {"access_token": "mock-jwt-token", "token_type": "bearer"}
-
-@app.post("/login")
-def login(req: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == req.email).first()
-    if not user or user.hashed_password != req.password:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    return {"access_token": "mock-jwt-token", "token_type": "bearer"}
 
 class GoogleLoginRequest(BaseModel):
     credential: str

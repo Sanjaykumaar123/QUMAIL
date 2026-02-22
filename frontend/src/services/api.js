@@ -18,13 +18,13 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-export const login = async (credentials) => {
-    const response = await api.post('/login', credentials);
+export const sendOtp = async (email) => {
+    const response = await api.post('/send-otp', { email });
     return response.data;
 };
 
-export const registerUser = async (credentials) => {
-    const response = await api.post('/register', credentials);
+export const verifyOtp = async (email, otp) => {
+    const response = await api.post('/verify-otp', { email, otp });
     return response.data;
 };
 
