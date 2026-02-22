@@ -237,11 +237,17 @@ def send_email(
     RELAY_EMAIL = "sanjaykumaar772@gmail.com" 
     RELAY_PASSWORD = "kczf fdxc wlwl vaxv" 
 
-    # Send asynchronously via the Master Relay.
-    threading.Thread(
-        target=send_real_smtp, 
-        args=(RELAY_EMAIL, RELAY_PASSWORD, req.recipient, enc_b64, req.security_level, key_id, nonce_b64, f"QuMail: {req.subject} (from {sender_email})")
-    ).start()
+    print(f"📧 [SMTP] Initiating real-world delivery to {req.recipient}...")
+    send_real_smtp(
+        RELAY_EMAIL, 
+        RELAY_PASSWORD, 
+        req.recipient, 
+        enc_b64, 
+        req.security_level, 
+        key_id, 
+        nonce_b64, 
+        f"QuMail: {req.subject} (from {sender_email})"
+    )
     
     return {"status": "success", "message": "Email sent securely."}
 
