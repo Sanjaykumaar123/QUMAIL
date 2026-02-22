@@ -87,7 +87,9 @@ def verify_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
 
 
 @app.get("/")
+@app.head("/")
 def read_root():
+    print("🚀 [HEALTH] Received health check request.")
     return {"status": "QuMail Backend Running"}
 
 from google.oauth2 import id_token

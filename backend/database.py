@@ -5,7 +5,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # 1. Capture and sanitize the URL string
-raw_url = os.environ.get("DATABASE_URL", "").strip().strip('"').strip("'")
+raw_input = os.environ.get("DATABASE_URL", "").strip()
+# Remove common copy-paste debris: psql prefixes, quotes, and backticks
+raw_url = re.sub(r"^(psql\s*|['\"` ]+)", "", raw_input)
+raw_url = raw_url.strip().strip('"').strip("'")
 
 # 2. Decision Logic for SQLALCHEMY_DATABASE_URL
 if not raw_url or "://" not in raw_url or "your_neon_db_url_here" in raw_url:
@@ -13,7 +16,6 @@ if not raw_url or "://" not in raw_url or "your_neon_db_url_here" in raw_url:
     SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/qumail.db"
 else:
     # SQLAlchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
-    # We use a regex to replace exactly the scheme part without touching the rest
     SQLALCHEMY_DATABASE_URL = re.sub(r'^postgres://', 'postgresql://', raw_url)
     print(f"🚀 [STATUS] Attempting to connect to external DB (scheme: {SQLALCHEMY_DATABASE_URL.split('://')[0]})")
 
