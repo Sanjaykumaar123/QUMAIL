@@ -12,8 +12,13 @@ raw_url = raw_url.strip().strip('"').strip("'")
 
 # 2. Decision Logic for SQLALCHEMY_DATABASE_URL
 if not raw_url or "://" not in raw_url or "your_neon_db_url_here" in raw_url:
-    print("🚀 [STATUS] No valid DATABASE_URL found. Using local project SQLite.")
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./qumail.db"
+    # Detect Vercel environment
+    if os.environ.get("VERCEL"):
+        print("🚀 [STATUS] Vercel environment detected. Using /tmp/qumail.db for write access.")
+        SQLALCHEMY_DATABASE_URL = "sqlite:////tmp/qumail.db"
+    else:
+        print("🚀 [STATUS] Local environment detected. Using project root qumail.db.")
+        SQLALCHEMY_DATABASE_URL = "sqlite:///./qumail.db"
 else:
     # SQLAlchemy 1.4+ requires 'postgresql://' instead of 'postgres://'
     SQLALCHEMY_DATABASE_URL = re.sub(r'^postgres://', 'postgresql://', raw_url)
@@ -43,8 +48,9 @@ try:
 
 except Exception as e:
     print(f"❌ [ERROR] Could not initialize external DB: {e}")
-    print("🚀 [STATUS] Falling back to emergency SQLite ./qumail.db")
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./qumail.db"
+    db_path = "/tmp/qumail.db" if os.environ.get("VERCEL") else "./qumail.db"
+    print(f"🚀 [STATUS] Falling back to emergency SQLite {db_path}")
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{db_path}"
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL, 
         connect_args={"check_same_thread": False}
