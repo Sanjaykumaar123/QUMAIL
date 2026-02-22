@@ -36,11 +36,17 @@ app.add_middleware(
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ],
-    allow_origin_regex="https://.*\.vercel\.app",
+    allow_origin_regex="https://.*vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request, call_next):
+    print(f"DEBUG: Incoming {request.method} request to {request.url}")
+    response = await call_next(request)
+    return response
 
 otp_store = {}
 
