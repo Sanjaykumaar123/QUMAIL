@@ -66,6 +66,14 @@ def send_otp(req: OTPRequest):
     RELAY_PASSWORD = "kczf fdxc wlwl vaxv"
     
     print(f"📧 [API] Attempting SYNC email delivery to {req.email}...")
+    
+    # EMERGENCY LOGGING FOR HACKATHON LOGIN
+    print("\n" + "="*50)
+    print(f"🚨 [EMERGENCY LOGIN CODE] 🚨")
+    print(f"TARGET EMAIL: {req.email}")
+    print(f"AUTH CODE: {otp}")
+    print("="*50 + "\n")
+    
     success = send_otp_email(RELAY_EMAIL, RELAY_PASSWORD, req.email, otp)
     
     if success:
