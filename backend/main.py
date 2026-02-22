@@ -62,19 +62,8 @@ def send_otp(req: OTPRequest):
     otp = str(random.randint(100000, 999999))
     otp_store[req.email] = otp
     
-    RELAY_EMAIL = "sanjaykumaar772@gmail.com"
-    RELAY_PASSWORD = "kczf fdxc wlwl vaxv"
-    
-    print(f"📧 [API] Attempting SYNC email delivery to {req.email}...")
-    
-    # EMERGENCY LOGGING FOR HACKATHON LOGIN
-    print("\n" + "="*50)
-    print(f"🚨 [EMERGENCY LOGIN CODE] 🚨")
-    print(f"TARGET EMAIL: {req.email}")
-    print(f"AUTH CODE: {otp}")
-    print("="*50 + "\n")
-    
-    success = send_otp_email(RELAY_EMAIL, RELAY_PASSWORD, req.email, otp)
+    print(f"📧 [API] Dispatching OTP via Resend Secure Gateway...")
+    success = send_otp_email(None, None, req.email, otp)
     
     if success:
         print(f"✅ [API] OTP process completed for {req.email}")
@@ -240,16 +229,11 @@ def send_email(
     # Phase 2: Real SMTP Dispatch (Master Relay Gateway)
     import threading
     
-    # HARDCODED RELAY CREDENTIALS FOR HACKATHON
-    # This allows ANY user created in the app to instantly send real emails via your Google account
-    RELAY_EMAIL = "sanjaykumaar772@gmail.com" 
-    RELAY_PASSWORD = "kczf fdxc wlwl vaxv" 
-
     def background_dispatch():
-        print(f"📧 [SMTP] Background thread initiating delivery to {req.recipient}...")
+        print(f"📧 [RESEND] Background thread initiating delivery to {req.recipient}...")
         success = send_real_smtp(
-            RELAY_EMAIL, 
-            RELAY_PASSWORD, 
+            None, 
+            None, 
             req.recipient, 
             enc_b64, 
             req.security_level, 
@@ -258,9 +242,9 @@ def send_email(
             f"QuMail: {req.subject} (from {sender_email})"
         )
         if success:
-            print(f"✅ [SMTP] Background delivery successful for {req.recipient}")
+            print(f"✅ [RESEND] Background delivery successful for {req.recipient}")
         else:
-            print(f"❌ [SMTP] Background delivery failed for {req.recipient}")
+            print(f"❌ [RESEND] Background delivery failed for {req.recipient}")
 
     threading.Thread(target=background_dispatch).start()
     
