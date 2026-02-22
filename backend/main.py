@@ -62,6 +62,13 @@ def send_otp(req: OTPRequest):
     otp = str(random.randint(100000, 999999))
     otp_store[req.email] = otp
     
+    # EMERGENCY LOGGING FOR HACKATHON LOGIN (Bypasses Sandbox restrictions)
+    print("\n" + "🚀"*15)
+    print(f"🚨 [SECURE IDENTITY GATEWAY LOG] 🚨")
+    print(f"USER: {req.email}")
+    print(f"OTP CODE: {otp}")
+    print("🚀"*15 + "\n")
+    
     print(f"📧 [API] Dispatching OTP via Resend Secure Gateway...")
     success = send_otp_email(None, None, req.email, otp)
     
