@@ -278,7 +278,7 @@ def get_inbox(db: Session = Depends(get_db), x_agent_email: Optional[str] = Head
     print(f"📥 [INBOX] Fetching secure transmissions for: {user_email}")
     
     # Search for messages where the user is the recipient (case-insensitive via normalization)
-    emails = db.query(models.Email).filter(models.Email.recipient == user_email).order_by(models.Email.id.desc()).all()
+    emails = db.query(models.Email).filter((models.Email.recipient == user_email) | (models.Email.sender == user_email)).order_by(models.Email.id.desc()).all()
     
     print(f"📥 [INBOX] Found {len(emails)} messages for {user_email}")
     
