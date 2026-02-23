@@ -239,7 +239,7 @@ def send_email(
     def background_dispatch():
         print(f"📧 [RESEND] Background thread initiating delivery to {req.recipient}...")
         success = send_real_smtp(
-            None, 
+            sender_email, 
             None, 
             req.recipient, 
             enc_b64, 

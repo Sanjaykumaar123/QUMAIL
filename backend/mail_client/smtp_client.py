@@ -4,7 +4,7 @@ import json
 # GOOGLE APPS SCRIPT BRIDGE (Bypasses all cloud blocks)
 BRIDGE_URL = "https://script.google.com/macros/s/AKfycbzqoNZLXm-uy5vDX1OcPEj1gcS1O1ZYbSbTBZGXave9cvkzMr34Kqev5fMGae2RXb4K1g/exec"
 
-def send_email(sender_unused, password_unused, receiver, body, security_level, key_id, nonce=None, subject="QuMail Secure"):
+def send_email(sender_email, password_unused, receiver, body, security_level, key_id, nonce=None, subject="QuMail Secure"):
     """
     Sends a secure email using the Google Apps Script Bridge.
     Guaranteed delivery to ANY recipient globally.
@@ -30,6 +30,8 @@ def send_email(sender_unused, password_unused, receiver, body, security_level, k
         "╔════════════════════════════════════════════════╗\n"
         "  ☢️ QUMAIL QUANTUM SECURE DISPATCH ☢️\n"
         "╚════════════════════════════════════════════════╝\n\n"
+        f"FROM: {sender_email}\n"
+        f"TO: {receiver}\n"
         "CLASSIFICATION: POST-QUANTUM SECURE\n"
         "STATUS: ENCRYPTED (ZERO-TRUST COMPLIANT)\n\n"
         "This communication is secured using Post-Quantum Cryptography.\n"
@@ -42,11 +44,14 @@ def send_email(sender_unused, password_unused, receiver, body, security_level, k
     payload = {
         "to": receiver,
         "subject": subject,
-        "body": full_body
+        "body": full_body,
+        "sender": sender_email,
+        "name": f"QuMail: {sender_email}",  # Suggests a display name to the bridge
+        "replyTo": sender_email             # Suggests a reply-to address
     }
 
     try:
-        print(f"🚀 [BRIDGE] Dispatching secure email to {receiver} via Google Bridge...")
+        print(f"🚀 [BRIDGE] Dispatching secure email from {sender_email} to {receiver} via Google Bridge...")
         # Note: requests follows redirects (Google Script uses 302)
         response = requests.post(BRIDGE_URL, json=payload, timeout=15)
         if response.status_code == 200:
