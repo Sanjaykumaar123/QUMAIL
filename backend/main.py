@@ -230,7 +230,8 @@ def send_email(
     )
     db.add(email_model)
     
-    log = models.SecurityLog(event_type="EMAIL_SENT", description=f"Sent to {req.recipient} with level {req.security_level}")
+    description = f"Encrypted level {req.security_level} dispatched to {req.recipient}"
+    log = models.SecurityLog(event_type="OUTBOUND_SECURITY_DISPATCH", description=description)
     db.add(log)
     db.commit()
     # Phase 2: Real SMTP Dispatch (Master Relay Gateway)
@@ -262,7 +263,24 @@ def get_inbox(
     db: Session = Depends(get_db),
     x_agent_email: Optional[str] = Header(None)
 ):
+    # Log the inbox access as a security scan event
+    scan_log = models.SecurityLog(
+        event_type="INBOUND_SECURITY_SCAN", 
+        description=f"Scanning secure node for incoming encrypted packets..."
+    )
+    db.add(scan_log)
+    db.commit()
+
     if x_agent_email:
+        emails = db.query(models.Email).filter(models.Email.recipient == x_agent_email).order_by(models.Email.id.desc()).all()
+        # Find if any are "new" (just for logging purposes)
+        if emails:
+            new_log = models.SecurityLog(
+                event_type="INCOMING_SECURE_PACKET",
+                description=f"Detected {len(emails)} secure messages in quantum buffer."
+            )
+            db.add(new_log)
+            db.commit()
         emails = db.query(models.Email).filter(models.Email.recipient == x_agent_email).order_by(models.Email.id.desc()).all()
     else:
         emails = db.query(models.Email).order_by(models.Email.id.desc()).all()
@@ -329,7 +347,7 @@ def get_dashboard(db: Session = Depends(get_db)):
                 "id": log.id, 
                 "event": log.event_type, 
                 "description": log.description,
-                "time": log.timestamp.strftime("%H:%M:%S")
+                "time": log.timestamp.strftime("%H:%M:%S") if log.timestamp else datetime.datetime.now().strftime("%H:%M:%S")
             }
             for log in db.query(models.SecurityLog).order_by(models.SecurityLog.id.desc()).limit(5).all()
         ]

@@ -32,6 +32,7 @@ const StatCard = ({ title, value, icon: Icon, color, glow }) => (
 );
 
 const Dashboard = () => {
+    const [currentTime, setCurrentTime] = useState(new Date());
     const [stats, setStats] = useState({
         remaining_keys: 4289,
         risk_meter: 12,
@@ -39,6 +40,11 @@ const Dashboard = () => {
         active_risks: 0,
         recent_logs: []
     });
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const loadStats = async () => {
@@ -62,10 +68,15 @@ const Dashboard = () => {
                     <h1 className="text-3xl font-bold font-mono tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500 uppercase">
                         Quantum Command
                     </h1>
-                    <p className="text-neonCyan text-sm font-mono mt-1 flex items-center">
-                        <span className="w-2 h-2 rounded-full bg-neonCyan mr-2 animate-pulse shadow-[0_0_8px_#06b6d4]"></span>
-                        Secure Terminal Online • Node Hash: {Math.random().toString(16).slice(2, 10)}
-                    </p>
+                    <div className="flex space-x-4 mt-1">
+                        <p className="text-neonCyan text-sm font-mono flex items-center">
+                            <span className="w-2 h-2 rounded-full bg-neonCyan mr-2 animate-pulse shadow-[0_0_8px_#06b6d4]"></span>
+                            Secure Terminal Online • Node Hash: {Math.random().toString(16).slice(2, 10)}
+                        </p>
+                        <p className="text-gray-500 text-sm font-mono border-l border-white/10 pl-4 uppercase tracking-tighter">
+                            SYSTEM TIME: {currentTime.toLocaleTimeString()}
+                        </p>
+                    </div>
                 </div>
             </div>
 
