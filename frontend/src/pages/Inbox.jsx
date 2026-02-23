@@ -15,10 +15,7 @@ const Inbox = () => {
                 const formattedData = data.map(item => ({
                     ...item,
                     level: item.security_level,
-                    time: new Date(item.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })
+                    time: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 }));
                 setEmails(formattedData);
             } catch (err) {

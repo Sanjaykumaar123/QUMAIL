@@ -27,19 +27,6 @@ class SecurityLog(Base):
     __tablename__ = "security_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_email = Column(String, index=True, nullable=True)
     event_type = Column(String)
     description = Column(String)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
-
-class SentMessage(Base):
-    __tablename__ = "sent_messages"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    sender_email = Column(String, index=True)
-    recipient_email = Column(String, index=True)
-    subject = Column(String)
-    security_level = Column(Integer)
-    algorithm = Column(String)
-    key_id = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)

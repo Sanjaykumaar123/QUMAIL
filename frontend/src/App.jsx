@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Inbox from './pages/Inbox';
-import Sent from './pages/Sent';
 import Compose from './pages/Compose';
 import ThreatPanel from './pages/ThreatPanel';
 import Sidebar from './components/Sidebar';
@@ -28,7 +27,6 @@ function App() {
                 <Route path="/" element={<Navigate to="/dashboard" />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/inbox" element={<Inbox />} />
-                <Route path="/sent" element={<Sent />} />
                 <Route path="/compose" element={<Compose />} />
                 <Route path="/threats" element={<ThreatPanel />} />
                 <Route path="*" element={<Navigate to="/dashboard" />} />

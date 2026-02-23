@@ -226,29 +226,11 @@ def send_email(
         body_encrypted=encrypted,
         security_level=req.security_level,
         threat_score=threat_score,
-        key_id=key_id,
-        timestamp=datetime.datetime.utcnow()
+        key_id=key_id
     )
     db.add(email_model)
-
-    # Save to SentItems
-    algo_map = {1: "OTP", 2: "Quantum-AES", 3: "PQC-Kyber512"}
-    sent_model = models.SentMessage(
-        sender_email=sender_email,
-        recipient_email=req.recipient,
-        subject=req.subject,
-        security_level=req.security_level,
-        algorithm=algo_map.get(req.security_level, "Standard"),
-        key_id=key_id,
-        created_at=datetime.datetime.utcnow()
-    )
-    db.add(sent_model)
     
-    log = models.SecurityLog(
-        user_email=sender_email,
-        event_type="EMAIL_SENT", 
-        description=f"Sent to {req.recipient} with level {req.security_level}"
-    )
+    log = models.SecurityLog(event_type="EMAIL_SENT", description=f"Sent to {req.recipient} with level {req.security_level}")
     db.add(log)
     db.commit()
     # Phase 2: Real SMTP Dispatch (Master Relay Gateway)
@@ -274,30 +256,6 @@ def send_email(
     threading.Thread(target=background_dispatch).start()
     
     return {"status": "success", "message": "Email sent securely."}
-
-@app.get("/email/sent")
-def get_sent_emails(
-    db: Session = Depends(get_db),
-    x_agent_email: Optional[str] = Header(None)
-):
-    if not x_agent_email:
-        return []
-    
-    sent_items = db.query(models.SentMessage).filter(models.SentMessage.sender_email == x_agent_email).order_by(models.SentMessage.id.desc()).all()
-    
-    return [
-        {
-            "id": s.id,
-            "recipient": s.recipient_email,
-            "subject": s.subject,
-            "security_level": s.security_level,
-            "algorithm": s.algorithm,
-            "key_id": s.key_id,
-            "created_at": s.created_at.isoformat() + "Z",
-            "status": "Delivered"
-        }
-        for s in sent_items
-    ]
 
 @app.get("/email/inbox")
 def get_inbox(
@@ -341,65 +299,38 @@ def get_inbox(
             "body": decrypted_body,
             "security_level": e.security_level,
             "threat_score": e.threat_score,
-            "created_at": e.timestamp.isoformat() + "Z",
+            "timestamp": e.timestamp,
             "key_id": e.key_id
         })
     return result
 
 @app.get("/security/dashboard")
-def get_dashboard(
-    db: Session = Depends(get_db),
-    x_agent_email: Optional[str] = Header(None)
-):
+def get_dashboard(db: Session = Depends(get_db)):
     remaining_keys = fetch_key_stats()
-    user_email = x_agent_email if x_agent_email else "demo@qumail.local"
     
     # Calculate a dynamic risk meter based on recent email threat scores
-    query = db.query(models.Email)
-    if x_agent_email:
-        query = query.filter(models.Email.sender == x_agent_email)
-        
-    recent_emails = query.order_by(models.Email.id.desc()).limit(10).all()
+    recent_emails = db.query(models.Email).order_by(models.Email.id.desc()).limit(10).all()
     if recent_emails:
         avg_threat = sum((e.threat_score or 0) for e in recent_emails) / len(recent_emails)
         risk_meter = min(100, int(avg_threat))
     else:
         risk_meter = 12
 
-    total_emails = query.count()
-    active_risks = query.filter(models.Email.threat_score > 50).count()
-
-    # Filter logs by user
-    log_query = db.query(models.SecurityLog)
-    if x_agent_email:
-        log_query = log_query.filter(models.SecurityLog.user_email == x_agent_email)
-    
-    logs = log_query.order_by(models.SecurityLog.id.desc()).limit(10).all()
-
-    # Dynamic Network Usage (Simulation for frontend animation)
-    network_usage = []
-    base_time = datetime.datetime.utcnow()
-    for i in range(7):
-        time_str = (base_time - datetime.timedelta(hours=(6-i)*4)).strftime("%H:%M")
-        network_usage.append({
-            "name": time_str,
-            "keys": random.randint(150, 600),
-            "risk": random.randint(10, 50)
-        })
+    total_emails = db.query(models.Email).count()
+    active_risks = db.query(models.Email).filter(models.Email.threat_score > 50).count()
 
     return {
         "remaining_keys": remaining_keys,
-        "threat_score": risk_meter,
+        "risk_meter": risk_meter,
         "secured_comms": total_emails,
         "active_risks": active_risks,
-        "network_usage": network_usage,
-        "audit_logs": [
+        "recent_logs": [
             {
                 "id": log.id, 
                 "event": log.event_type, 
                 "description": log.description,
-                "time": log.timestamp.isoformat()
+                "time": log.timestamp.strftime("%H:%M:%S")
             }
-            for log in logs
+            for log in db.query(models.SecurityLog).order_by(models.SecurityLog.id.desc()).limit(5).all()
         ]
     }
