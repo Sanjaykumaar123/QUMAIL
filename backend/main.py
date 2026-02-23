@@ -26,6 +26,21 @@ def startup_db_client():
     try:
         models.Base.metadata.create_all(bind=engine)
         print(f"🚀 [STARTUP] Database tables initialized successfully.")
+        
+        # AUTO-MIGRATION: Ensure user_email exists in security_logs
+        with engine.connect() as conn:
+            from sqlalchemy import text
+            try:
+                # Check if column exists (works for SQLite and Postgres)
+                conn.execute(text("SELECT user_email FROM security_logs LIMIT 1"))
+            except Exception:
+                print("⚠️ [MIGRATION] Column 'user_email' not found. Adding it...")
+                try:
+                    conn.execute(text("ALTER TABLE security_logs ADD COLUMN user_email TEXT"))
+                    conn.commit()
+                    print("✅ [MIGRATION] Column 'user_email' added successfully.")
+                except Exception as ex:
+                    print(f"❌ [MIGRATION] Failed to add column: {ex}")
     except Exception as e:
         print(f"❌ [STARTUP] Critical Error during table creation: {e}")
 
