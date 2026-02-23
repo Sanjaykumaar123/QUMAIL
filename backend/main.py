@@ -197,7 +197,7 @@ def perform_secure_dispatch(req_data, s_email, t_score, k_id, e_body, n_b64, cip
         # 1. Persist to DB
         email_model = models.Email(
             sender=s_email,
-            recipient=req_data.recipient,
+            recipient=req_data.recipient.lower().strip(),
             subject=req_data.subject,
             body_encrypted=e_body,
             security_level=req_data.security_level,
@@ -222,7 +222,7 @@ def perform_secure_dispatch(req_data, s_email, t_score, k_id, e_body, n_b64, cip
             inner_db.commit() # Save email at least
 
         # 3. SMTP Bridge
-        success = send_real_smtp(None, None, req_data.recipient, ciphertext_b64, req_data.security_level, k_id, n_b64, f"QuMail: {req_data.subject}")
+        success = send_real_smtp(None, None, req_data.recipient.lower().strip(), ciphertext_b64, req_data.security_level, k_id, n_b64, f"QuMail: {req_data.subject}")
         if success:
             print(f"✨ [WORKER] SMTP Bridge Successful for {req_data.recipient}")
     except Exception as e:
@@ -234,7 +234,10 @@ def perform_secure_dispatch(req_data, s_email, t_score, k_id, e_body, n_b64, cip
 @app.post("/email/send")
 def send_email(req: SendEmailRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db), x_agent_email: Optional[str] = Header(None)):
     print(f"📨 [API] Send Request from: {x_agent_email} to {req.recipient}")
-    sender_email = x_agent_email if x_agent_email else "demo@qumail.local"
+    
+    # Normalize emails
+    sender_email = (x_agent_email if x_agent_email else "demo@qumail.local").lower().strip()
+    target_recipient = req.recipient.lower().strip()
     
     # 1. Fetch QKD
     key_id, key_bytes = fetch_qkd_key()
@@ -271,10 +274,15 @@ def send_email(req: SendEmailRequest, background_tasks: BackgroundTasks, db: Ses
 
 @app.get("/email/inbox")
 def get_inbox(db: Session = Depends(get_db), x_agent_email: Optional[str] = Header(None)):
-    user_email = x_agent_email if x_agent_email else "demo@qumail.local"
-    emails = db.query(models.Email).filter(models.Email.recipient == user_email).order_by(models.Email.id.desc()).all()
-    result = []
+    user_email = (x_agent_email if x_agent_email else "demo@qumail.local").lower().strip()
+    print(f"📥 [INBOX] Fetching secure transmissions for: {user_email}")
     
+    # Search for messages where the user is the recipient (case-insensitive via normalization)
+    emails = db.query(models.Email).filter(models.Email.recipient == user_email).order_by(models.Email.id.desc()).all()
+    
+    print(f"📥 [INBOX] Found {len(emails)} messages for {user_email}")
+    
+    result = []
     for e in emails:
         decrypted_body = e.body_encrypted
         try:
@@ -291,13 +299,22 @@ def get_inbox(db: Session = Depends(get_db), x_agent_email: Optional[str] = Head
         except:
             decrypted_body = "<Decryption Error: Integrity Failure>"
             
-        result.append({"id": e.id, "sender": e.sender, "subject": e.subject, "body": decrypted_body, "security_level": e.security_level, "threat_score": e.threat_score, "timestamp": e.timestamp})
+        result.append({
+            "id": e.id, 
+            "sender": e.sender, 
+            "subject": e.subject, 
+            "body": decrypted_body, 
+            "security_level": e.security_level, 
+            "threat_score": e.threat_score, 
+            "timestamp": e.timestamp,
+            "key_id": e.key_id
+        })
     return result
 
 @app.get("/security/dashboard")
 def get_dashboard(db: Session = Depends(get_db), x_agent_email: Optional[str] = Header(None)):
     try:
-        user_email = x_agent_email if x_agent_email else "demo@qumail.local"
+        user_email = (x_agent_email if x_agent_email else "demo@qumail.local").lower().strip()
         
         # 1. Key Stats
         remaining_keys = fetch_key_stats() or 4289
