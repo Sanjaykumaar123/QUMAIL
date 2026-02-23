@@ -42,18 +42,15 @@ const Compose = () => {
             await new Promise(resolve => setTimeout(resolve, 800));
             setSendStep(3); // KM Fetch -> API / SMTP Dispatch
 
-            // Add a logical timeout for the API call (though axios has its own)
-            const result = await sendEncryptedEmail({
+            await sendEncryptedEmail({
                 recipient,
                 subject,
                 body,
                 security_level: level
             });
 
-            console.log("Dispatch Result:", result);
             setSendStep(4); // Dispatched
             setSent(true);
-
             setTimeout(() => {
                 setSent(false);
                 setSending(false);
@@ -64,8 +61,7 @@ const Compose = () => {
                 setSuggestion(null);
             }, 3000);
         } catch (e) {
-            console.error("Critical Dispatch Failure:", e);
-            alert(`SECURITY ALERT: Dispatch Failed. ${e.message || 'Check terminal connection.'}`);
+            console.error("Failed to send", e);
             setSending(false);
             setSendStep(0);
         }

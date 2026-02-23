@@ -27,7 +27,6 @@ class SecurityLog(Base):
     __tablename__ = "security_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_email = Column(String, index=True)
     event_type = Column(String)
     description = Column(String)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)

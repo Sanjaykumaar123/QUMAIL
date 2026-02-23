@@ -33,37 +33,18 @@ const StatCard = ({ title, value, icon: Icon, color, glow }) => (
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
-        remaining_keys: 0,
+        remaining_keys: 4289,
         risk_meter: 12,
         secured_comms: 0,
         active_risks: 0,
         recent_logs: []
     });
-    const [chartData, setChartData] = useState([
-        { name: 'T-30', keys: 100, risk: 10 },
-        { name: 'T-25', keys: 120, risk: 15 },
-        { name: 'T-20', keys: 150, risk: 12 },
-        { name: 'T-15', keys: 130, risk: 18 },
-        { name: 'T-10', keys: 170, risk: 14 },
-        { name: 'T-5', keys: 140, risk: 20 },
-        { name: 'NOW', keys: 160, risk: 12 },
-    ]);
 
     useEffect(() => {
         const loadStats = async () => {
             try {
                 const data = await getDashboardStats();
                 setStats(data);
-
-                // Update chart data with "live" feel
-                setChartData(prev => {
-                    const newPoint = {
-                        name: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                        keys: data.remaining_keys % 1000, // Just for visualization
-                        risk: data.risk_meter
-                    };
-                    return [...prev.slice(1), newPoint];
-                });
             } catch (err) {
                 console.error("Failed to fetch dashboard stats", err);
             }
@@ -99,20 +80,20 @@ const Dashboard = () => {
                 <div className="lg:col-span-2 glass-card p-6">
                     <h3 className="text-xl font-mono tracking-widest text-white mb-6 flex items-center uppercase">
                         <Activity className="w-5 h-5 mr-3 text-neonCyan" />
-                        Network Utilization (Keys Flux)
+                        Network Utilization
                     </h3>
                     <div className="h-80 w-full font-mono">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData}>
+                            <LineChart data={data}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                <XAxis dataKey="name" stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} />
-                                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                <XAxis dataKey="name" stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} />
+                                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} tickLine={false} />
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#06b6d4', borderRadius: '8px', boxShadow: '0 0 15px rgba(6,182,212,0.2)' }}
                                     itemStyle={{ color: '#fff' }}
                                 />
-                                <Line type="monotone" dataKey="keys" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4, fill: '#06b6d4', strokeWidth: 2, stroke: '#020617' }} activeDot={{ r: 6, shadow: '0 0 10px #06b6d4' }} animationDuration={300} />
-                                <Line type="monotone" dataKey="risk" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={false} animationDuration={300} />
+                                <Line type="stepAfter" dataKey="keys" stroke="#06b6d4" strokeWidth={3} dot={{ r: 4, fill: '#06b6d4', strokeWidth: 2, stroke: '#020617' }} activeDot={{ r: 6, shadow: '0 0 10px #06b6d4' }} />
+                                <Line type="monotone" dataKey="risk" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={false} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -128,9 +109,7 @@ const Dashboard = () => {
                             stats.recent_logs.map((log) => (
                                 <div key={log.id} className="flex flex-col border-l-2 border-white/10 pl-4 py-1 relative group hover:border-neonCyan transition-colors">
                                     <div className="absolute w-2 h-2 rounded-full bg-white/20 -left-[5px] top-2 group-hover:bg-neonCyan group-hover:shadow-[0_0_8px_#06b6d4] transition-all" />
-                                    <span className="text-[10px] text-gray-500 font-mono mb-1">
-                                        {new Date(log.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                    </span>
+                                    <span className="text-[10px] text-gray-500 font-mono mb-1">{log.time}</span>
                                     <span className="text-xs font-mono font-bold text-neonCyan uppercase tracking-widest">{log.event}</span>
                                     <span className="text-[11px] text-gray-400 mt-1 italic">
                                         {log.description}
