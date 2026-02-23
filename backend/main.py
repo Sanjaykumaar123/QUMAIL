@@ -245,50 +245,66 @@ def send_email(
         enc_b64 = req.body
         encrypted = req.body
 
-    # 3. Save to DB acting as Local SQLite encrypted cache
-    sender_email = x_agent_email if x_agent_email else "demo@qumail.local" # Use authentic sender
-    
-    email_model = models.Email(
-        sender=sender_email,
-        recipient=req.recipient,
-        subject=req.subject,
-        body_encrypted=encrypted,
-        security_level=req.security_level,
-        threat_score=threat_score,
-        key_id=key_id
-    )
-    db.add(email_model)
-    
-    log = models.SecurityLog(
-        user_email=sender_email,
-        event_type="EMAIL_SENT", 
-        description=f"Sent to {req.recipient} with level {req.security_level}"
-    )
-    db.add(log)
-    db.commit()
-    # Phase 2: Real SMTP Dispatch (Master Relay Gateway)
-    import threading
-    
-    def background_dispatch():
-        print(f"📧 [RESEND] Background thread initiating delivery to {req.recipient}...")
-        success = send_real_smtp(
-            None, 
-            None, 
-            req.recipient, 
-            enc_b64, 
-            req.security_level, 
-            key_id, 
-            nonce_b64, 
-            f"QuMail: {req.subject} (from {sender_email})"
-        )
-        if success:
-            print(f"✅ [RESEND] Background delivery successful for {req.recipient}")
-        else:
-            print(f"❌ [RESEND] Background delivery failed for {req.recipient}")
+    # Phase 2: Async Processing Engine
+    def async_secure_dispatch(req_data, s_email, t_score, k_id, k_bytes, e_body, n_b64, ciphertext_b64):
+        print(f"🧬 [NON-BLOCKING] Starting background processing for {req_data.recipient}...")
+        
+        # We need a new session for the background thread if we are using it outside the request or if the original session closes
+        # But here we can use the main app's sessionmaker to be safe
+        from database import SessionLocal
+        inner_db = SessionLocal()
+        try:
+            print(f"💾 [DB-CACHE] Saving encrypted ciphertext to secure vault...")
+            email_model = models.Email(
+                sender=s_email,
+                recipient=req_data.recipient,
+                subject=req_data.subject,
+                body_encrypted=e_body,
+                security_level=req_data.security_level,
+                threat_score=t_score,
+                key_id=k_id
+            )
+            inner_db.add(email_model)
+            
+            log = models.SecurityLog(
+                user_email=s_email,
+                event_type="EMAIL_SENT", 
+                description=f"Sent to {req_data.recipient} with level {req_data.security_level}"
+            )
+            inner_db.add(log)
+            inner_db.commit()
+            print(f"✅ [DB-CACHE] Metadata persisted.")
 
-    threading.Thread(target=background_dispatch).start()
+            print(f"📧 [BRIDGE] Initiating SMTP relay dispatch...")
+            success = send_real_smtp(
+                None, 
+                None, 
+                req_data.recipient, 
+                ciphertext_b64, 
+                req_data.security_level, 
+                k_id, 
+                n_b64, 
+                f"QuMail: {req_data.subject} (from {s_email})"
+            )
+            if success:
+                print(f"✨ [DISPATCH] Ultimate delivery successful for {req_data.recipient}")
+            else:
+                print(f"⚠️ [DISPATCH] SMTP Gateway returned failure, but message cached locally.")
+        except Exception as e:
+            print(f"❌ [ASYNC-ERR] background dispatch failed: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            inner_db.close()
+
+    import threading
+    threading.Thread(
+        target=async_secure_dispatch, 
+        args=(req, sender_email, threat_score, key_id, key_bytes, encrypted, nonce_b64, enc_b64)
+    ).start()
     
-    return {"status": "success", "message": "Email sent securely."}
+    print(f"🚀 [API] Returning early. Background thread handling the rest.")
+    return {"status": "success", "message": "Email processing initiated."}
 
 @app.get("/email/inbox")
 def get_inbox(
