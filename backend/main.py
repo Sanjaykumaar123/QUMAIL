@@ -97,6 +97,13 @@ def verify_otp(req: VerifyOTPRequest, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
     
+    db.add(models.SecurityLog(
+        user_email=req.email,
+        event_type="AUTH_VERIFIED",
+        description="User verified via Secure OTP Gateway"
+    ))
+    db.commit()
+    
     return {"access_token": "mock-jwt-token", "token_type": "bearer", "email": req.email}
 
 
@@ -129,6 +136,13 @@ def google_login(req: GoogleLoginRequest, db: Session = Depends(get_db)):
             user = models.User(email=email, hashed_password="GOOGLE_AUTH_USER")
             db.add(user)
             db.commit()
+        
+        db.add(models.SecurityLog(
+            user_email=email,
+            event_type="AUTH_VERIFIED",
+            description="User verified via Google Secure Gateway"
+        ))
+        db.commit()
         
         return {"access_token": "mock-jwt-token", "token_type": "bearer", "email": email}
     except ValueError:
@@ -230,7 +244,11 @@ def send_email(
     )
     db.add(email_model)
     
-    log = models.SecurityLog(event_type="EMAIL_SENT", description=f"Sent to {req.recipient} with level {req.security_level}")
+    log = models.SecurityLog(
+        user_email=sender_email,
+        event_type="EMAIL_SENT", 
+        description=f"Sent to {req.recipient} with level {req.security_level}"
+    )
     db.add(log)
     db.commit()
     # Phase 2: Real SMTP Dispatch (Master Relay Gateway)
@@ -305,19 +323,33 @@ def get_inbox(
     return result
 
 @app.get("/security/dashboard")
-def get_dashboard(db: Session = Depends(get_db)):
+def get_dashboard(
+    db: Session = Depends(get_db),
+    x_agent_email: Optional[str] = Header(None)
+):
+    user_email = x_agent_email if x_agent_email else "demo@qumail.local"
     remaining_keys = fetch_key_stats()
     
-    # Calculate a dynamic risk meter based on recent email threat scores
-    recent_emails = db.query(models.Email).order_by(models.Email.id.desc()).limit(10).all()
+    # Calculate a dynamic risk meter based on recent email threat scores for THIS user
+    recent_emails_query = db.query(models.Email).filter(
+        (models.Email.sender == user_email) | (models.Email.recipient == user_email)
+    ).order_by(models.Email.id.desc())
+    
+    recent_emails = recent_emails_query.limit(10).all()
+    
     if recent_emails:
         avg_threat = sum((e.threat_score or 0) for e in recent_emails) / len(recent_emails)
         risk_meter = min(100, int(avg_threat))
     else:
         risk_meter = 12
 
-    total_emails = db.query(models.Email).count()
-    active_risks = db.query(models.Email).filter(models.Email.threat_score > 50).count()
+    total_emails = recent_emails_query.count()
+    active_risks = recent_emails_query.filter(models.Email.threat_score > 50).count()
+
+    # Filter Security Logs by user
+    logs = db.query(models.SecurityLog).filter(
+        models.SecurityLog.user_email == user_email
+    ).order_by(models.SecurityLog.id.desc()).limit(10).all()
 
     return {
         "remaining_keys": remaining_keys,
@@ -329,8 +361,8 @@ def get_dashboard(db: Session = Depends(get_db)):
                 "id": log.id, 
                 "event": log.event_type, 
                 "description": log.description,
-                "time": log.timestamp.strftime("%H:%M:%S")
+                "time": log.timestamp.isoformat() # Return ISO format for frontend flexibility
             }
-            for log in db.query(models.SecurityLog).order_by(models.SecurityLog.id.desc()).limit(5).all()
+            for log in logs
         ]
     }
